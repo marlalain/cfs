@@ -24,6 +24,8 @@ Output:
 bar
 ```
 
+---
+
 ```shell
 cfs list
 ```
