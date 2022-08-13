@@ -1,5 +1,4 @@
 use std::{env, io};
-use std::fmt::format;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
@@ -43,10 +42,7 @@ fn get_json_object() -> JsonValue {
 }
 
 fn set_json_object(json: JsonValue) -> io::Result<()> {
-	let mut file = match File::create(get_config_path()) {
-		Ok(x) => x,
-		Err(err) => eprintln!(err),
-	};
+	let mut file = File::create(get_config_path()).unwrap();
 	let json_string = json::stringify_pretty(json, 2);
 	write!(file, "{}", json_string)?;
 
@@ -74,8 +70,8 @@ fn ignore_null() -> Flag {
 		.alias("i")
 }
 
-fn list_action(c: &Context) {
-	let mut conf = get_json_object();
+fn list_action(_c: &Context) {
+	let conf = get_json_object();
 
 	for (key, value) in conf.entries() {
 		println!("{}\t{}", key, value);
@@ -87,20 +83,22 @@ fn get_action(c: &Context) {
 		invalid_command();
 	}
 
-	let mut conf = get_json_object();
-	let key = match c.args.get(0) {
-		Some(x) => x,
-		None => invalid("key"),
-	};
+	let conf = get_json_object();
+	let key = c.args.get(0);
 
-	if conf.has_key(&key) {
-		println!("{}", conf[key]);
-	} else {
-		if c.bool_flag("ignore-null") {
-			println!();
-		} else {
-			eprintln!("could not find key '{}'", key);
-			exit(1);
+	match key {
+		None => invalid("key"),
+		Some(key) => {
+			if conf.has_key(&key) {
+				println!("{}", conf[key]);
+			} else {
+				if c.bool_flag("ignore-null") {
+					println!();
+				} else {
+					eprintln!("could not find key '{}'", key);
+					exit(1);
+				}
+			}
 		}
 	}
 }
@@ -111,24 +109,33 @@ fn set_action(c: &Context) {
 	}
 
 	let mut conf = get_json_object();
-	let key = match c.args.get(0) {
-		Some(x) => x,
+	let key = c.args.get(0);
+
+	match key {
 		None => invalid("key"),
-	};
-	let value_str = match c.args.get(1) {
-		Some(x) => x.as_str(),
-		None => invalid("value"),
-	};
-	let value = JsonValue::from(value_str);
+		Some(key) => {
+			let value_str = c.args.get(1);
 
-	if conf.has_key(key) {
-		conf.remove(key);
+			match value_str {
+				None => invalid("value"),
+				Some(value_str) => {
+					let json_value = JsonValue::from(value_str.as_str());
+					let value = json_value.as_str().unwrap();
+
+					if conf.has_key(key) {
+						conf.remove(key);
+					}
+
+					conf.insert(key, value).unwrap();
+
+					match set_json_object(conf) {
+						Ok(_) => println!("update config file"),
+						Err(err) => eprintln!("{}", err)
+					}
+				}
+			}
+		}
 	}
-
-	conf.insert(key, value).unwrap();
-
-	set_json_object(conf).unwrap();
-	println!("updated config file");
 }
 
 fn list() -> Command {
