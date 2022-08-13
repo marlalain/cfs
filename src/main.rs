@@ -89,7 +89,8 @@ fn force_create() -> Flag {
 }
 
 fn init_action(_c: &Context) {
-	let _file = File::create(get_config_path()).unwrap();
+	let mut file = File::create(get_config_path()).unwrap();
+	write!(file, "{}", "{}").unwrap();
 	println!("created config file at '{}'", get_config_path());
 }
 
