@@ -17,7 +17,7 @@ fn invalid(cause: &str) {
 }
 
 fn get_config_path() -> String {
-	let home_folder = env!("HOME");
+	let home_folder = env::var("HOME").unwrap();
 	let path = home_folder.to_owned() + "/.cfs.json";
 
 	return path;
@@ -69,7 +69,9 @@ fn main() -> io::Result<()> {
 		.command(set_value())
 		.command(get_value())
 		.command(list())
-		.command(init());
+		.command(init())
+		.command(remove_value())
+		.command(clear());
 
 	app.run(args);
 
@@ -88,10 +90,15 @@ fn force_create() -> Flag {
 		.alias("f")
 }
 
-fn init_action(_c: &Context) {
-	let mut file = File::create(get_config_path()).unwrap();
-	write!(file, "{}", "{}").unwrap();
-	println!("created config file at '{}'", get_config_path());
+fn init_action(c: &Context) {
+	let config_path = get_config_path();
+	let path = Path::new(&config_path);
+
+	if path.exists() {
+		println!("config file already exists");
+	} else {
+		clear_action(c);
+	}
 }
 
 fn list_action(c: &Context) {
@@ -100,6 +107,12 @@ fn list_action(c: &Context) {
 	for (key, value) in conf.entries() {
 		println!("{}\t{}", key, value);
 	}
+}
+
+fn clear_action(_c: &Context) {
+	let mut file = File::create(get_config_path()).unwrap();
+	write!(file, "{}", "{}").unwrap();
+	println!("cleared config file at '{}'", get_config_path());
 }
 
 fn get_action(c: &Context) {
@@ -162,6 +175,27 @@ fn set_action(c: &Context) {
 	}
 }
 
+fn remove_action(c: &Context) {
+	let mut conf = get_json_object_or_create(c.bool_flag("force-create"));
+	let key = c.args.get(0);
+
+	match key {
+		None => invalid("key"),
+		Some(key) => {
+			if conf.has_key(&key) {
+				conf.remove(&key);
+
+				match set_json_object(conf) {
+					Ok(_) => println!("updated config file"),
+					Err(err) => eprintln!("{}", err)
+				}
+			} else {
+				println!("key '{}' was not found", key);
+			}
+		}
+	}
+}
+
 fn init() -> Command {
 	Command::new("init")
 		.description("Inits config file")
@@ -177,6 +211,22 @@ fn list() -> Command {
 		.usage(format!("{} list", env!("CARGO_PKG_NAME")))
 		.action(list_action)
 		.flag(force_create())
+}
+
+fn clear() -> Command {
+	Command::new("clear")
+		.description("clear your config file")
+		.alias("c")
+		.usage(format!("{} clear", env!("CARGO_PKG_NAME")))
+		.action(clear_action)
+}
+
+fn remove_value() -> Command {
+	Command::new("remove")
+		.description("remove a value")
+		.alias("r")
+		.usage(format!("{} remove foo", env!("CARGO_PKG_NAME")))
+		.action(remove_action)
 }
 
 fn get_value() -> Command {
