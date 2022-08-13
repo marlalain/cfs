@@ -1,5 +1,5 @@
 use std::{env, io};
-use std::fs::File;
+use std::fs::{File, read_to_string};
 use std::io::Write;
 use std::path::Path;
 use std::process::exit;
@@ -18,9 +18,19 @@ fn invalid(cause: &str) {
 
 fn get_config_path() -> String {
 	let home_folder = env!("HOME");
-	let path = home_folder.to_owned() + "/.conf.json";
+	let path = home_folder.to_owned() + "/.cfs.json";
 
 	return path;
+}
+
+fn get_json_object_or_create(force_create: bool) -> JsonValue {
+	let path_exists = Path::new(&get_config_path()).exists();
+	if force_create && !path_exists {
+		let mut file = File::create(get_config_path()).unwrap();
+		write!(file, "{}", "{}").unwrap();
+	}
+
+	get_json_object()
 }
 
 fn get_json_object() -> JsonValue {
@@ -31,7 +41,7 @@ fn get_json_object() -> JsonValue {
 		exit(1);
 	}
 
-	let json = json::parse(&*std::fs::read_to_string(&path).unwrap()).unwrap();
+	let json = json::parse(&*read_to_string(&path).unwrap()).unwrap();
 
 	if !json.is_object() {
 		eprintln!("config file is not a JSON file ('{}')", &path);
@@ -42,7 +52,7 @@ fn get_json_object() -> JsonValue {
 }
 
 fn set_json_object(json: JsonValue) -> io::Result<()> {
-	let mut file = File::create(get_config_path()).unwrap();
+	let mut file = File::create(get_config_path())?;
 	let json_string = json::stringify_pretty(json, 2);
 	write!(file, "{}", json_string)?;
 
@@ -58,7 +68,8 @@ fn main() -> io::Result<()> {
 		.usage(format!("{} [commands]", env!("CARGO_PKG_NAME")))
 		.command(set_value())
 		.command(get_value())
-		.command(list());
+		.command(list())
+		.command(init());
 
 	app.run(args);
 
@@ -67,11 +78,23 @@ fn main() -> io::Result<()> {
 
 fn ignore_null() -> Flag {
 	Flag::new("ignore-null", FlagType::Bool)
+		.description("ignore null values")
 		.alias("i")
 }
 
-fn list_action(_c: &Context) {
-	let conf = get_json_object();
+fn force_create() -> Flag {
+	Flag::new("force-create", FlagType::Bool)
+		.description("creates config file, if it doesn't exist")
+		.alias("f")
+}
+
+fn init_action(_c: &Context) {
+	let _file = File::create(get_config_path()).unwrap();
+	println!("created config file at '{}'", get_config_path());
+}
+
+fn list_action(c: &Context) {
+	let conf = get_json_object_or_create(c.bool_flag("force-create"));
 
 	for (key, value) in conf.entries() {
 		println!("{}\t{}", key, value);
@@ -83,7 +106,7 @@ fn get_action(c: &Context) {
 		invalid_command();
 	}
 
-	let conf = get_json_object();
+	let conf = get_json_object_or_create(c.bool_flag("force-create"));
 	let key = c.args.get(0);
 
 	match key {
@@ -108,7 +131,7 @@ fn set_action(c: &Context) {
 		invalid_command();
 	}
 
-	let mut conf = get_json_object();
+	let mut conf = get_json_object_or_create(c.bool_flag("force-create"));
 	let key = c.args.get(0);
 
 	match key {
@@ -129,7 +152,7 @@ fn set_action(c: &Context) {
 					conf.insert(key, value).unwrap();
 
 					match set_json_object(conf) {
-						Ok(_) => println!("update config file"),
+						Ok(_) => println!("updated config file"),
 						Err(err) => eprintln!("{}", err)
 					}
 				}
@@ -138,12 +161,21 @@ fn set_action(c: &Context) {
 	}
 }
 
+fn init() -> Command {
+	Command::new("init")
+		.description("Inits config file")
+		.alias("i")
+		.usage(format!("{} init", env!("CARGO_PKG_NAME")))
+		.action(init_action)
+}
+
 fn list() -> Command {
 	Command::new("list")
 		.description("list all keys and values")
 		.alias("l")
 		.usage(format!("{} list", env!("CARGO_PKG_NAME")))
 		.action(list_action)
+		.flag(force_create())
 }
 
 fn get_value() -> Command {
@@ -153,6 +185,7 @@ fn get_value() -> Command {
 		.usage(format!("{} get foo", env!("CARGO_PKG_NAME")))
 		.action(get_action)
 		.flag(ignore_null())
+		.flag(force_create())
 }
 
 fn set_value() -> Command {
@@ -161,4 +194,5 @@ fn set_value() -> Command {
 		.alias("s")
 		.usage(format!("{} set foo bar", env!("CARGO_PKG_NAME")))
 		.action(set_action)
+		.flag(force_create())
 }
