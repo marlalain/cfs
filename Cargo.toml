@@ -1,6 +1,6 @@
 [package]
 name = "cfs"
-authors = ["Alex Andrade <alex@alexaa.dev>"]
+authors = ["Alex Andrade <pauloalbuquerque@acm.org>"]
 description = "Quickly save and retrieve values for shell scripts"
 version = "0.1.0"
 edition = "2021"
