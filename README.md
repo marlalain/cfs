@@ -12,7 +12,7 @@ cargo install cfs
 
 ## example usage
 
-,ake sure `$HOME/.cargo/bin` is in your `PATH` variable.
+make sure `$HOME/.cargo/bin` is in your `PATH` variable.
 
 ```shell
 cfs set foo bar

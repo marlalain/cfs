@@ -2,11 +2,13 @@
 name = "cfs"
 authors = ["Alex Andrade Albuquerque <alex@alexaa.dev>"]
 description = "Quickly save and retrieve values for shell scripts"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2021"
 license-file = "LICENSE"
 homepage = "https://github.com/minsk-dev/cfs"
 repository = "https://github.com/minsk-dev/cfs"
+keywords = ["cli", "shell tool", "shell"]
+categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
