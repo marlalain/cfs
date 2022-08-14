@@ -7,7 +7,7 @@ use crate::flags::{force_create, ignore_null};
 
 pub fn init() -> Command {
 	Command::new("init")
-		.description("Inits config file")
+		.description("inits config file")
 		.alias("i")
 		.usage(format!("{} init", env!("CARGO_PKG_NAME")))
 		.action(init_action)
