@@ -7,7 +7,7 @@ edition = "2021"
 license-file = "LICENSE"
 homepage = "https://github.com/minsk-dev/cfs"
 repository = "https://github.com/minsk-dev/cfs"
-keywords = ["cli", "shell tool", "shell"]
+keywords = ["cli", "shell-tool", "shell"]
 categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
