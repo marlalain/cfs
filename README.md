@@ -37,7 +37,7 @@ Commands:
 	s, set    : set a value
 	g, get    : get a value
 	l, list   : list all keys and values
-	i, init   : Inits config file
+	i, init   : inits config file
 	r, remove : remove a value
 	c, clear  : clear your config file
 ```
