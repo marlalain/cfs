@@ -2,7 +2,7 @@
 name = "cfs"
 authors = ["Alex Andrade Albuquerque <alex@alexaa.dev>"]
 description = "Quickly save and retrieve values for shell scripts"
-version = "0.3.2"
+version = "1.0.0"
 edition = "2021"
 license-file = "LICENSE"
 homepage = "https://github.com/minsk-dev/cfs"
